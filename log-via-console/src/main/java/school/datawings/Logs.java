@@ -53,32 +53,25 @@ public class Logs {
         while (true){
             Integer nomeAletorio = ThreadLocalRandom.current().nextInt(0, 9);
             Integer logAleatorio = ThreadLocalRandom.current().nextInt(0, 99);
-            String nomeAtual;
+            String nomeAtual = "";
             String logAtual;
             String cor;
             dataHoraFormatada = dataHora.plusMinutes(minutos++).format(formatacao);
 
-            if(nomeAletorio == 1){
-                nomeAtual = listaNomes.get(nomeAletorio);
-            }else if(nomeAletorio == 2){
-                nomeAtual = listaNomes.get(nomeAletorio);
-            } else if (nomeAletorio == 3) {
-                nomeAtual = listaNomes.get(nomeAletorio);
-            }else if(nomeAletorio == 4){
-                nomeAtual = listaNomes.get(nomeAletorio);
-            } else if (nomeAletorio == 5) {
-                nomeAtual = listaNomes.get(nomeAletorio);
-            } else if (nomeAletorio == 6) {
-                nomeAtual = listaNomes.get(nomeAletorio);
-            } else if (nomeAletorio == 7) {
-                nomeAtual = listaNomes.get(nomeAletorio);
-            } else if (nomeAletorio == 8) {
-                nomeAtual = listaNomes.get(nomeAletorio);
-            } else if (nomeAletorio == 9) {
-                nomeAtual = listaNomes.get(nomeAletorio);
-            }else{
-                nomeAtual = listaNomes.get(nomeAletorio);
-            };
+
+            switch (nomeAletorio){
+                case 0 -> nomeAtual = listaNomes.get(nomeAletorio);
+                case 1 -> nomeAtual = listaNomes.get(nomeAletorio);
+                case 2 -> nomeAtual = listaNomes.get(nomeAletorio);
+                case 3 -> nomeAtual = listaNomes.get(nomeAletorio);
+                case 4 -> nomeAtual = listaNomes.get(nomeAletorio);
+                case 5 -> nomeAtual = listaNomes.get(nomeAletorio);
+                case 6 -> nomeAtual = listaNomes.get(nomeAletorio);
+                case 7 -> nomeAtual = listaNomes.get(nomeAletorio);
+                case 8 -> nomeAtual = listaNomes.get(nomeAletorio);
+                case 9 -> nomeAtual = listaNomes.get(nomeAletorio);
+                default -> System.out.println("Nome aleatório inválido");
+            }
 
 
             if (logAleatorio <= 60) {
