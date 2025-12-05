@@ -1,6 +1,31 @@
 package school.sptech;
 
-public class ConversorJustificativa {
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+
+public class Leg_voosAtrasados extends Leg_voos {
+    private final String codigoJustificativa;
+
+    public Leg_voosAtrasados(LocalDateTime partidaPrevista, LocalDateTime partidaReal, LocalDateTime chegadaPrevista, LocalDateTime chegadaReal, String codigoJustificativa) {
+        super(partidaPrevista, partidaReal, chegadaPrevista, chegadaReal);
+        this.codigoJustificativa = codigoJustificativa;
+    }
+
+    public String getCodigoJustificativa() {
+        return codigoJustificativa;
+    }
+
+    public static int calcularTempoAtraso(LocalDateTime partidaPrevista, LocalDateTime partidaReal, LocalDateTime chegadaPrevista, LocalDateTime chegadaReal){
+
+        Long diferencaPartidaMinutos = ChronoUnit.MINUTES.between(partidaPrevista, partidaReal);
+        Long atrasoPartida = Math.max(0, diferencaPartidaMinutos);
+
+        Long diferencaChegadaMinutos = ChronoUnit.MINUTES.between(chegadaPrevista, chegadaReal);
+        Long atrasoChegada = Math.max(0, diferencaChegadaMinutos);
+
+        return (int)(atrasoPartida + atrasoChegada);
+    }
+
     public static String getJustificativaCompleta(String codigo) {
 
         if (codigo == null || codigo.trim().isEmpty()) {

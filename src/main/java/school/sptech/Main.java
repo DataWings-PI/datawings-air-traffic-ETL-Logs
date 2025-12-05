@@ -1,107 +1,75 @@
 package school.sptech;
 
-
-
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import school.sptech.client.S3Provider;
+import school.sptech.dto.VooCompleto;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.*;
-import school.sptech.client.S3Provider;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 
-import java.io.File;
-import java.io.FileInputStream;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.time.format.DateTimeFormatter;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
+
+        String bucket = "s3-raw-datawings-otavio";
+        String keyVoos = "Dados.xlsx";
 
 
-        S3Client s3Client = new S3Provider().getS3Client();
-        String bucketName = "s3-raw-lab-otavio";
-
-
-        List<Bucket> buckets = s3Client.listBuckets().buckets();
-        for (Bucket bucket : buckets) {
-            System.out.println("Bucket: " + bucket.name());
-        }
-
-
-        ListObjectsRequest listObjects = ListObjectsRequest.builder()
-                .bucket(bucketName)
-                .build();
-
-        List<S3Object> objects = s3Client.listObjects(listObjects).contents();
-        for (S3Object object : objects) {
-            System.out.println("Objeto: " + object.key());
-        }
-
-        String diretorioDestino = "/src/main/resources/";
-
-        for (S3Object object : objects) {
-            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(object.key())
-                    .build();
-
-            InputStream objectContent = s3Client.getObject(getObjectRequest, ResponseTransformer.toInputStream());
-            Files.copy(objectContent, new File(object.key()).toPath());
-        }
-
-
-//        ConexaoBanco conexaoBanco = new ConexaoBanco();
-//        RotasDao rotasDao = new RotasDao(conexaoBanco.getJdbcTemplate());
-//
-//    LeituraDados leituraDados = new LeituraDados();
-//    String caminhoArquivo = "../src/main/resources/Dados_Teste.xlsx";
-//
-//        try {
-//            leituraDados.lerRotas(caminhoArquivo, rotasDao);
-//
-//
-//            System.out.println("\n✅ Processo concluído com sucesso!");
-//            System.out.println("As rotas foram lidas e inseridas no banco de dados.");
-//
-//        } catch (IOException e) {
-//            System.err.println("\n❌ ERRO: Não foi possível ler o arquivo Excel.");
-//            System.err.println("Verifique o caminho: " + caminhoArquivo);
-//            e.printStackTrace();
-//        } catch (Exception e) {
-//            // Captura qualquer outro erro, como problemas de conexão ou SQL
-//            System.err.println("\n❌ ERRO: Ocorreu um erro durante a execução do processo.");
-//            System.err.println("Detalhes do erro: " + e.getMessage());
-//            e.printStackTrace();
-//        }
-
-        String url = "jdbc:mysql://localhost:3306/DataWings";
+        String url = "jdbc:mysql://localhost:3306/datawings";
         String usuario = "root";
         String senha = "Ta22828931";
 
-        String caminhoArquivo = "Dados.xlsx";
-
-        String sql = "INSERT INTO dados_tratados (sigla_empresa, numero_voo, codigo_autorizacao, codigo_tipo_linha," +
+        String sql = "INSERT INTO voo (sigla_empresa, numero_voo, codigo_autorizacao, codigo_tipo_linha," +
                 " icao_origem, icao_destino, partida_prevista, partida_real, chegada_prevista, chegada_real," +
-                " situacao_voo, codigo_justificativa, fk_usuario) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+                " situacao_voo, codigo_justificativa, justificativa, tempo_atraso, fk_empresa) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+
+        String sqlLog = "INSERT INTO log_java(categoria, data_hora_registro, mensagem) VALUES(?, ?, ?)";
+        String sqlLogException = sqlLog;
 
         int batchSize = 1000;
         int count = 0;
 
+        Connection conexao1 = DriverManager.getConnection(url, usuario, senha);
+        conexao1.setAutoCommit(false);
+        PreparedStatement stmt3 = conexao1.prepareStatement(sqlLogException);
+
+        int countLog = 0;
+        DateTimeFormatter formatacao = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+
         try (Connection conexao = DriverManager.getConnection(url, usuario, senha);
              PreparedStatement stmt = conexao.prepareStatement(sql);
+             PreparedStatement stmt2 = conexao.prepareStatement(sqlLog);
 
-             FileInputStream arquivo = new FileInputStream(new File(caminhoArquivo));
-             Workbook workbook = new XSSFWorkbook(arquivo)) {
+             S3Client s3Client = new S3Provider().getS3Client();
+             InputStream voos = s3Client.getObject(
+                     GetObjectRequest.builder().bucket(bucket).key(keyVoos).build(),
+                     ResponseTransformer.toInputStream());
+             Workbook workbook = new XSSFWorkbook(voos);) {
 
+            System.out.printf("  _____        _     __          ___                 \n" +
+                    " |  __ \\      | |    \\ \\        / (_)                \n" +
+                    " | |  | | __ _| |_ __ \\ \\  /\\  / / _ _ __   __ _ ___ \n" +
+                    " | |  | |/ _` | __/ _` \\ \\/  \\/ / | | '_ \\ / _` / __|\n" +
+                    " | |__| | (_| | || (_| |\\  /\\  /  | | | | | (_| \\__ \\\n" +
+                    " |_____/ \\__,_|\\__\\__,_| \\/  \\/   |_|_| |_|\\__, |___/\n" +
+                    "                                            __/ |    \n" +
+                    "                                           |___/     ");
+
+
+            Thread.sleep(3000);
             conexao.setAutoCommit(false);
 
             Sheet sheet = workbook.getSheetAt(0);
@@ -112,77 +80,66 @@ public class Main {
                 if (row == null) {
                     continue;
                 }
-
-                String siglaEmpresa;
-                Integer numeroVoo;
-                Integer codigoAutorizacao;
-                String codigoTipoLinha;
-                String icaoOrigem;
-                String icaoDestino;
-                LocalDateTime partidaPrevista;
-                LocalDateTime partidaReal;
-                LocalDateTime chegadaPrevista;
-                LocalDateTime chegadaReal;
-                String situacaoVoo;
-                String codigoJustificativa;
-
                 try {
-                    siglaEmpresa = row.getCell(0).getStringCellValue();
-                    numeroVoo = (int) row.getCell(1).getNumericCellValue();
-                    codigoAutorizacao = (int) row.getCell(2).getNumericCellValue();
-                    codigoTipoLinha = row.getCell(3).getStringCellValue();
-                    icaoOrigem = row.getCell(4).getStringCellValue();
-                    icaoDestino = row.getCell(5).getStringCellValue();
+                    VooCompleto voo = VooImportador.extrairVoo(row);
 
-                    partidaPrevista = row.getCell(6).getLocalDateTimeCellValue();
-                    partidaReal = row.getCell(7).getLocalDateTimeCellValue();
-                    chegadaPrevista = row.getCell(8).getLocalDateTimeCellValue();
-                    chegadaReal = row.getCell(9).getLocalDateTimeCellValue();
-
-                    situacaoVoo = row.getCell(10).getStringCellValue();
-
-                    codigoJustificativa = row.getCell(11).getStringCellValue();
-
-                    String justificativaCompleta = ConversorJustificativa.getJustificativaCompleta(codigoJustificativa);
-
-
-                    stmt.setString(1, siglaEmpresa);
-
-                    stmt.setInt(2, numeroVoo);
-
-                    stmt.setInt(3, codigoAutorizacao);
-
-                    stmt.setString(4, codigoTipoLinha);
-
-                    stmt.setString(5, icaoOrigem);
-
-                    stmt.setString(6, icaoDestino);
-
-
-                    stmt.setObject(7, partidaPrevista);
-
-                    stmt.setObject(8, partidaReal);
-
-                    stmt.setObject(9, chegadaPrevista);
-
-                    stmt.setObject(10, chegadaReal);
-
-                    stmt.setString(11, situacaoVoo);
-
-                    stmt.setString(12, justificativaCompleta);
+                    VooImportador.setStatementParameters(stmt, voo);
 
                     stmt.addBatch();
                     count++;
 
+                } catch (IllegalArgumentException e) {
+                    System.err.printf("Linha %d IGNORADA: %s\n", i + 1, e.getMessage());
+
+                    String categoria = "ERRO";
+                    LocalDateTime dataHora = LocalDateTime.now();
+                    String dataHoraFormatada = dataHora.format(formatacao);
+                    String mensagem = String.format("LINHA IGNORADA (Excel %d): %s", i + 1, e.getMessage());
+
+                    stmt2.setObject(1, categoria);
+                    stmt2.setObject(2, dataHoraFormatada);
+                    stmt2.setObject(3, mensagem);
+
+                    stmt2.addBatch();
+                    countLog++;
+                    continue;
+
                 } catch (Exception e) {
                     System.err.printf("ERRO de tipo de célula na linha Excel %d: %s. Linha ignorada.%n", i + 1, e.getMessage());
+
+                    String categoria = "ERRO";
+                    LocalDateTime dataHora = LocalDateTime.now();
+                    String dataHoraFormatada = dataHora.format(formatacao);
+
+                    String mensagem = String.format("%s DE TIPO (Excel %d): %s. Linha ignorada.", categoria, i + 1, e.getMessage());
+
+                    stmt2.setObject(1, categoria);
+                    stmt2.setObject(2, dataHoraFormatada);
+                    stmt2.setObject(3, mensagem);
+
+                    stmt2.addBatch();
+                    countLog++;
                     continue;
                 }
 
                 if (count % batchSize == 0) {
-                    stmt.executeBatch();
-                    conexao.commit();
                     System.out.println("Lote de " + batchSize + " inserções executado. Total: " + count);
+                    String categoria = "CARGA";
+                    LocalDateTime dataHora = LocalDateTime.now();
+                    String dataHoraFormatada = dataHora.format(formatacao);
+
+                    String mensagem = "Lote de " + batchSize + " inserções executado. Total: " + count;
+
+                    stmt2.setObject(1, categoria);
+                    stmt2.setObject(2, dataHoraFormatada);
+                    stmt2.setObject(3, mensagem);
+
+                    stmt2.addBatch();
+                    countLog++;
+
+                    stmt.executeBatch();
+                    stmt2.executeBatch();
+                    conexao.commit();
                 }
             }
 
@@ -191,17 +148,66 @@ public class Main {
                 stmt.executeBatch();
             }
 
+            String categoria = "CARGA";
+            LocalDateTime dataHora = LocalDateTime.now();
+            String dataHoraFormatada = dataHora.format(formatacao);
+
+            System.out.println("Total de " + count + " inserções concluídas!\n");
+            String mensagem = "Total de " + count + " inserções concluídas!";
+
+            stmt2.setObject(1, categoria);
+            stmt2.setObject(2, dataHoraFormatada);
+            stmt2.setObject(3, mensagem);
+
+            stmt2.addBatch();
+            countLog++;
+
+            if (countLog > 0) {
+                stmt2.executeBatch();
+            }
             conexao.commit();
-            System.out.println("Total de " + count + " inserções concluídas!");
+
 
         } catch (SQLException e) {
             e.printStackTrace();
             System.err.println("Erro de SQL: " + e.getMessage());
 
+            String categoria = "ERRO";
+            LocalDateTime dataHora = LocalDateTime.now();
+            String dataHoraFormatada = dataHora.format(formatacao);
+            String mensagem = String.format("%s de SQL fatal: %s", categoria, e.getMessage());
+
+            stmt3.setObject(1, categoria);
+            stmt3.setObject(2, dataHoraFormatada);
+            stmt3.setObject(3, mensagem);
+            stmt3.addBatch();
+            countLog++;
+
+            if (countLog > 0) {
+                try {
+                    stmt3.executeBatch();
+                    conexao1.commit();
+                } catch (SQLException logEx) {
+                    System.err.println("ERRO fatal: Não foi possível salvar os logs no banco de dados: " + logEx.getMessage());
+                }
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Erro ao ler o arquivo Excel: " + e.getMessage());
+
+            if (countLog > 0) {
+                try {
+                    stmt3.executeBatch();
+                    conexao1.commit();
+                } catch (SQLException logEx) {
+                    System.err.println("ERRO fatal: Não foi possível salvar os logs no banco de dados após IOException: " + logEx.getMessage());
+                }
+            }
+
+        } finally {
+            if (stmt3 != null) stmt3.close();
+            if (conexao1 != null) conexao1.close();
         }
     }
 }
-
