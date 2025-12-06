@@ -29,7 +29,7 @@ public class Main {
 
         String url = "jdbc:mysql://localhost:3306/datawings";
         String usuario = "root";
-        String senha = "Ta22828931";
+        String senha = "";
 
         String sql = "INSERT INTO voo (sigla_empresa, numero_voo, codigo_autorizacao, codigo_tipo_linha," +
                 " icao_origem, icao_destino,uf_origem, uf_destino, partida_prevista, partida_real, chegada_prevista, chegada_real," +
