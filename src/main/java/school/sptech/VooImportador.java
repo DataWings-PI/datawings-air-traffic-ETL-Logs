@@ -75,14 +75,15 @@ public class VooImportador {
         stmt.setString(4, vooCompleto.getVoo().getCodigoTipoLinha());
         stmt.setString(5, vooCompleto.getRota().getIcaoOrigem());
         stmt.setString(6, vooCompleto.getRota().getIcaoDestino());
-        stmt.setObject(7, vooCompleto.getLegVoosAtrasados().getPartidaPrevista());
-        stmt.setObject(8, vooCompleto.getLegVoosAtrasados().getPartidaReal());
-        stmt.setObject(9, vooCompleto.getLegVoosAtrasados().getChegadaPrevista());
-        stmt.setObject(10, vooCompleto.getLegVoosAtrasados().getChegadaReal());
-        stmt.setString(11, vooCompleto.getSituacaoVoo().toUpperCase());
-        stmt.setString(12, vooCompleto.getLegVoosAtrasados().getCodigoJustificativa());
-        stmt.setString(13, vooCompleto.getJustificativaCompleta());
-        stmt.setInt(14, vooCompleto.getTempoAtraso());
-
+        stmt.setString(7, vooCompleto.getUfOrigem());
+        stmt.setString(8, vooCompleto.getUfDestino());
+        stmt.setObject(9, vooCompleto.getLegVoosAtrasados().getPartidaPrevista());
+        stmt.setObject(10, vooCompleto.getLegVoosAtrasados().getPartidaReal());
+        stmt.setObject(11, vooCompleto.getLegVoosAtrasados().getChegadaPrevista());
+        stmt.setObject(12, vooCompleto.getLegVoosAtrasados().getChegadaReal());
+        stmt.setString(13, vooCompleto.getSituacaoVoo().toUpperCase());
+        stmt.setString(14, vooCompleto.getLegVoosAtrasados().getCodigoJustificativa());
+        stmt.setString(15, vooCompleto.getJustificativaCompleta());
+        stmt.setInt(16, vooCompleto.getTempoAtraso());
     }
 }

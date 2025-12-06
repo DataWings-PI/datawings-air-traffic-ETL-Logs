@@ -14,7 +14,9 @@ public class VooCompleto {
     private final String situacaoVoo;
     private final String justificativaCompleta;
     private final int tempoAtraso;
-    private final int fkEmpresa = 1; // Valor fixo
+    private final int fkEmpresa = 1;
+    private final String ufOrigem;
+    private final String ufDestino;
 
     public VooCompleto(String siglaEmpresa, int numeroVoo, int codigoAutorizacao, String codigoTipoLinha,
                        String icaoOrigem, String icaoDestino,
@@ -25,6 +27,9 @@ public class VooCompleto {
         this.voo = new Voo(siglaEmpresa, numeroVoo, codigoAutorizacao, codigoTipoLinha);
         this.rota = new Rota(icaoOrigem, icaoDestino);
 
+        this.ufOrigem = this.rota.getUfOrigem();
+        this.ufDestino = this.rota.getUfDestino();
+
         this.legVoosAtrasados = new Leg_voosAtrasados(partidaPrevista, partidaReal, chegadaPrevista, chegadaReal, codigoJustificativa);
 
         this.situacaoVoo = situacaoVoo;
@@ -32,7 +37,7 @@ public class VooCompleto {
         this.tempoAtraso = Leg_voosAtrasados.calcularTempoAtraso(partidaPrevista, partidaReal, chegadaPrevista, chegadaReal);
     }
 
-    // Getters
+
     public Voo getVoo() { return voo; }
     public Rota getRota() { return rota; }
     public Leg_voosAtrasados getLegVoosAtrasados() { return legVoosAtrasados; }
@@ -40,4 +45,6 @@ public class VooCompleto {
     public String getJustificativaCompleta() { return justificativaCompleta; }
     public int getTempoAtraso() { return tempoAtraso; }
     public int getFkEmpresa() { return fkEmpresa; }
+    public String getUfOrigem() {return ufOrigem;}
+    public String getUfDestino() {return ufDestino;}
 }

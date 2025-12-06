@@ -29,11 +29,11 @@ public class Main {
 
         String url = "jdbc:mysql://localhost:3306/datawings";
         String usuario = "root";
-        String senha = "";
+        String senha = "Ta22828931";
 
         String sql = "INSERT INTO voo (sigla_empresa, numero_voo, codigo_autorizacao, codigo_tipo_linha," +
-                " icao_origem, icao_destino, partida_prevista, partida_real, chegada_prevista, chegada_real," +
-                " situacao_voo, codigo_justificativa, justificativa, tempo_atraso, fk_empresa) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+                " icao_origem, icao_destino,uf_origem, uf_destino, partida_prevista, partida_real, chegada_prevista, chegada_real," +
+                " situacao_voo, codigo_justificativa, justificativa, tempo_atraso, fk_empresa) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
 
         String sqlLog = "INSERT INTO log_java(categoria, data_hora_registro, mensagem) VALUES(?, ?, ?)";
         String sqlLogException = sqlLog;
