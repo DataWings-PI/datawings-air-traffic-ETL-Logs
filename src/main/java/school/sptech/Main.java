@@ -1,9 +1,12 @@
 package school.sptech;
 
+
+import io.github.cdimascio.dotenv.Dotenv;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.jdbc.core.JdbcTemplate;
 import school.sptech.client.S3Provider;
 import school.sptech.dto.VooCompleto;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
@@ -22,14 +25,42 @@ import java.time.format.DateTimeFormatter;
 
 public class Main {
     public static void main(String[] args) throws Exception {
+        Dotenv dotenv = Dotenv.load();
 
         String bucket = "s3-raw-datawings-otavio";
         String keyVoos = "Dados.xlsx";
 
 
-        String url = "jdbc:mysql://localhost:3306/datawings";
-        String usuario = "root";
-        String senha = "";
+        String url = dotenv.get("DB_URL");
+        String usuario = dotenv.get("DB_USER");
+        String senha = dotenv.get("DB_PASSWORD");
+
+        Conexao conexao3 = new Conexao();
+        SlackBot s1 = new SlackBot();
+
+
+        String canalAtrasos = "";
+        String canalCancelamentos = "";
+        String canalLogs = "";
+
+        Integer totalAtrasos = s1.obterTotalAtrasos();
+        Integer totalCancelados = s1.obterTotalCancelamentos();
+        Integer status = s1.obterStatusNotificacao(1);
+        Integer statusAtraso = s1.obterStatusAtrasos(1);
+        Integer statusCancelamento = s1.obterStatusCancelamento(1);
+
+        Integer countErro = 0;
+        Integer countCarga = 0;
+
+
+        try (Connection conn = conexao3.getConexao().getConnection()) {
+            System.out.println("Conexão estabelecida com sucesso!");
+        } catch (Exception e) {
+            System.err.println("Falha na conexão: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+
 
         String sql = "INSERT INTO voo (sigla_empresa, numero_voo, codigo_autorizacao, codigo_tipo_linha," +
                 " icao_origem, icao_destino,uf_origem, uf_destino, partida_prevista, partida_real, chegada_prevista, chegada_real," +
@@ -96,12 +127,14 @@ public class Main {
                     String dataHoraFormatada = dataHora.format(formatacao);
                     String mensagem = String.format("LINHA IGNORADA (Excel %d): %s", i + 1, e.getMessage());
 
+
                     stmt2.setObject(1, categoria);
                     stmt2.setObject(2, dataHoraFormatada);
                     stmt2.setObject(3, mensagem);
 
                     stmt2.addBatch();
                     countLog++;
+                    countErro++;
                     continue;
 
                 } catch (Exception e) {
@@ -119,6 +152,7 @@ public class Main {
 
                     stmt2.addBatch();
                     countLog++;
+                    countErro++;
                     continue;
                 }
 
@@ -136,6 +170,7 @@ public class Main {
 
                     stmt2.addBatch();
                     countLog++;
+                    countCarga++;
 
                     stmt.executeBatch();
                     stmt2.executeBatch();
@@ -161,6 +196,7 @@ public class Main {
 
             stmt2.addBatch();
             countLog++;
+            countCarga++;
 
             if (countLog > 0) {
                 stmt2.executeBatch();
@@ -182,6 +218,7 @@ public class Main {
             stmt3.setObject(3, mensagem);
             stmt3.addBatch();
             countLog++;
+            countErro++;
 
             if (countLog > 0) {
                 try {
@@ -209,5 +246,38 @@ public class Main {
             if (stmt3 != null) stmt3.close();
             if (conexao1 != null) conexao1.close();
         }
+
+        if (status == null || status == 0) {
+            System.out.println("Notificações desativadas. Nada a enviar.");
+            return;
+        }
+
+        LocalDateTime dataHora = LocalDateTime.now();
+        String dataHoraFormatada = dataHora.format(formatacao);
+
+        String mensagemErro = s1.gerarMensagemLogsErro(countErro);
+        String mensagemCarga = s1.gerarMensagemLogsCarga(count);
+
+        String mensagemAtraso = s1.gerarMensagemAtrasos(totalAtrasos);
+        String mensagemCancelamento = s1.gerarMensagemCancelamentos(totalCancelados);
+
+        s1.enviarMensagem(mensagemErro, canalLogs, "Alerta de Erros na inserção", dataHoraFormatada);
+        s1.enviarMensagem(mensagemCarga, canalLogs, "Registro de dados", dataHoraFormatada);
+
+        if(statusAtraso == null || statusAtraso == 0){
+            System.out.println("Notificações de atrasos desativada. Nada a enviar.");
+
+        }else{
+        s1.enviarMensagem(mensagemAtraso, canalAtrasos, "Alerta de Atrasos registrados", dataHoraFormatada);
+        }
+
+        if(statusCancelamento== null || statusCancelamento == 0){
+            System.out.println("Notificações de cancelamentos desativada. Nada a enviar.");
+
+        }else{
+            s1.enviarMensagem(mensagemCancelamento, canalCancelamentos, "Alerta de Cancelamentos registrados", dataHoraFormatada);
+        }
+
+
     }
 }
